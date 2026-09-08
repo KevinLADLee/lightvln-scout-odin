@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lightvln_scout</name>
+  <version>0.1.0</version>
+  <description>LightNav integration and safety adapter for Scout Mini with Odin1.</description>
+  <maintainer email="maintainers@example.com">LightVLN Scout maintainers</maintainer>
+  <license>GPL-3.0-or-later</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <depend>diagnostic_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>odin_ros_driver</exec_depend>
+  <depend>rcl_interfaces</depend>
+  <depend>rclpy</depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-aiohttp</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <depend>scout_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>vln_client</exec_depend>
+  <exec_depend>vln_mpc</exec_depend>
+  <exec_depend>vln_web</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,8 @@
+# Dependencies for the default, closest-to-upstream LightNav robot stack.
+numpy>=1.23.5,<2
+aiohttp>=3.8,<4
+casadi>=3.7,<4
+pyyaml>=6,<7
+# ROS 2 Humble's ament_python/colcon symlink-install invokes the legacy
+# setuptools develop command and is incompatible with newer editable flags.
+setuptools==59.6.0

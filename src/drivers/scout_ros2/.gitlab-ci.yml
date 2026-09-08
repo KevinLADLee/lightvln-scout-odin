@@ -1,0 +1,30 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - test
+
+ros2:
+  stage: test
+  image: $ROS_IMAGE
+  parallel:
+    matrix:
+      - ROS_DISTRO: humble
+        ROS_IMAGE: ros:humble-ros-base-jammy
+      - ROS_DISTRO: jazzy
+        ROS_IMAGE: ros:jazzy-ros-base-noble
+  before_script:
+    - apt-get update
+    - >-
+      apt-get install -y --no-install-recommends
+      build-essential cmake python3-colcon-common-extensions
+      "ros-${ROS_DISTRO}-xacro"
+  script:
+    - . "/opt/ros/$ROS_DISTRO/setup.sh"
+    - colcon build --base-paths . --cmake-args -DBUILD_TESTING=ON
+    - . install/setup.sh
+    - colcon test --event-handlers console_direct+
+    - colcon test-result --verbose
+    - ros2 launch scout_base scout_mini.launch.py --show-args
+    - ros2 launch scout_description scout_base_description.launch.py --show-args
+    - ros2 run scout_base scout_test_tui --help

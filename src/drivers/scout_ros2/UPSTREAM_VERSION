@@ -1,0 +1,8 @@
+repository: git@github.com:Hive-Matrix-AI/scout_ros2.git
+default_branch: humble
+commit: 165083d93942955870a96bd1b984a7b9f6f4fcdd
+snapshot_policy: track the remote default branch
+
+dependency_repository: git@github.com:Hive-Matrix-AI/agilex_ugv_sdk.git
+dependency_path: third_party/agilex_ugv_sdk
+dependency_commit: c3fa0c92144dda542c45b12b7bf3c0ba8e635159

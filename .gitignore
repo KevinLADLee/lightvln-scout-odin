@@ -1,0 +1,34 @@
+# ROS/colcon outputs
+/build/
+/install/
+/log/
+
+# Python environments and caches
+/.venv/
+/.uv-cache/
+/.matplotlib/
+/.ruff_cache/
+/.pytest_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+coverage.xml
+htmlcov/
+
+# Runtime data produced by older Odin builds. Current builds write to
+# ~/.ros/odin_ros_driver (or ODIN_RUNTIME_DIR) instead of the checkout.
+/image/
+/src/odin_ros_driver/
+
+# Machine-specific settings and local backups
+/.local/
+/.backups/
+/.env
+/.env.local
+
+# Editor and operating-system files
+/.idea/
+/.vscode/
+.DS_Store
+*.swp

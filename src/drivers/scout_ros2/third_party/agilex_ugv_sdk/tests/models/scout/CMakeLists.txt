@@ -1,0 +1,7 @@
+add_executable(test_scout_mini_codec test_scout_mini_codec.cpp)
+target_link_libraries(test_scout_mini_codec PRIVATE agilex_ugv_sdk_test_support)
+add_test(NAME scout_mini_codec COMMAND test_scout_mini_codec)
+
+add_executable(test_scout_mini test_scout_mini.cpp)
+target_link_libraries(test_scout_mini PRIVATE agilex_ugv_sdk_test_support)
+add_test(NAME scout_mini_robot COMMAND test_scout_mini)

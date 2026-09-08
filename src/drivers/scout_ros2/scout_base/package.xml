@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>scout_base</name>
+  <version>1.0.0</version>
+  <description>ROS 2 driver for SCOUT MINI and SCOUT MINI OMNI, supporting Humble and Jazzy.</description>
+
+  <author email="ruixiang.du@westonrobot.com">Ruixiang Du</author>
+  <maintainer email="ruixiang.du@westonrobot.com">Ruixiang Du</maintainer>
+
+  <license>Apache-2.0</license>
+
+  <url type="website">https://github.com/Hive-Matrix-AI/scout_ros2</url>
+  <url type="bugtracker">https://github.com/Hive-Matrix-AI/scout_ros2/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>rclcpp</depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend version_gte="1.1.0">agilex_ugv_sdk</depend>
+  <depend>scout_msgs</depend>
+
+  <test_depend>ament_cmake_copyright</test_depend>
+  <test_depend>ament_cmake_cpplint</test_depend>
+  <test_depend>ament_cmake_flake8</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_cmake_uncrustify</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

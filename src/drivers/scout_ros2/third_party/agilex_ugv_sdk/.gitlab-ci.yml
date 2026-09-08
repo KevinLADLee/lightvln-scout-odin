@@ -1,0 +1,13 @@
+stages:
+  - test
+
+standalone-cpp17:
+  stage: test
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update
+    - apt-get install -y build-essential cmake
+  script:
+    - cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DBUILD_EXAMPLES=ON
+    - cmake --build build --parallel
+    - ctest --test-dir build --output-on-failure

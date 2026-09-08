@@ -1,0 +1,4 @@
+The web UI is derived from src/lightnav/vln_web/web in this workspace.
+Upstream package: vln_web (LightNav-0), Apache-2.0, maintainer xiaoyang (Lightrobo).
+Scout-specific image geometry and preview adaptation are maintained here.
+The upstream web assets are left unchanged.

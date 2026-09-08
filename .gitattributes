@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+*.a binary
+*.bin binary
+*.stl binary
+
+# Preserve vendored snapshots without creating formatting-only diffs.
+src/drivers/** whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab

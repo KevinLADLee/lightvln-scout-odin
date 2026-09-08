@@ -1,0 +1,57 @@
+name: ROS 2
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.ros_distro }} / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distro: humble
+            os: ubuntu-22.04
+            image: ros:humble-ros-base-jammy
+          - ros_distro: jazzy
+            os: ubuntu-24.04
+            image: ros:jazzy-ros-base-noble
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.image }}
+    env:
+      ROS_DISTRO: ${{ matrix.ros_distro }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential cmake python3-colcon-common-extensions \
+            "ros-${ROS_DISTRO}-xacro"
+      - name: Build
+        shell: bash
+        run: |
+          source "/opt/ros/$ROS_DISTRO/setup.bash"
+          colcon build --base-paths . --cmake-args -DBUILD_TESTING=ON
+      - name: Test
+        shell: bash
+        run: |
+          source "/opt/ros/$ROS_DISTRO/setup.bash"
+          source install/setup.bash
+          colcon test --event-handlers console_direct+
+          colcon test-result --verbose
+      - name: Check installed entry points
+        shell: bash
+        run: |
+          source "/opt/ros/$ROS_DISTRO/setup.bash"
+          source install/setup.bash
+          ros2 launch scout_base scout_mini.launch.py --show-args
+          ros2 launch scout_description scout_base_description.launch.py --show-args
+          ros2 run scout_base scout_test_tui --help

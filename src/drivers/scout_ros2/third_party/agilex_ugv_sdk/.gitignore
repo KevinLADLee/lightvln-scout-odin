@@ -1,0 +1,23 @@
+# Build and test output
+build/
+build-*/
+cmake-build-*/
+install/
+log/
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local editor and assistant files
+.vscode/
+.idea/
+*.user
+*.swp
+*~
+.DS_Store
+/.agents/
+/.codex/
+/.claude/
+/AGENTS.md
+/CLAUDE.md

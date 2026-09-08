@@ -1,0 +1,15 @@
+SCOUT ROS 2
+
+The repository is distributed under the Apache License, Version 2.0, except
+where a file carries a different license notice. Existing author and copyright
+notices are retained in the source files.
+
+scout_description/urdf/scout_wheel_type1.xacro and scout_wheel_type2.xacro
+are adapted from wheel.urdf.xacro in husky_description and carry BSD-3-Clause
+terms, including the full redistribution conditions and disclaimer.
+
+Authors: Paul Bovbel and Ruixiang Du
+Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
+Copyright (c) 2020, Weston Robot Pte. Ltd., All rights reserved.
+
+The agilex_ugv_sdk submodule is distributed under its own Apache-2.0 LICENSE.
