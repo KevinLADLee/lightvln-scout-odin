@@ -1,6 +1,7 @@
 """Regression coverage for the release consistency checks."""
 
 import importlib.util
+import subprocess
 from pathlib import Path
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "check_repository.py"
@@ -50,3 +51,16 @@ def test_deployed_source_snapshot_does_not_require_git(tmp_path, monkeypatch, ca
         (package / name).touch()
     assert CHECKS.main() == 0
     assert "without .git" in capsys.readouterr().out
+
+
+def test_git_failure_reports_original_error_and_fails_check(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(CHECKS, "__file__", str(tmp_path / "scripts/check_repository.py"))
+    (tmp_path / ".git").mkdir()
+    monkeypatch.setattr(
+        CHECKS.subprocess, "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            ["git", "ls-files", "-z"], 128, "", "fatal: detected dubious ownership\n"
+        ),
+    )
+    assert CHECKS.main() == 1
+    assert "git ls-files failed (128): fatal: detected dubious ownership" in capsys.readouterr().err

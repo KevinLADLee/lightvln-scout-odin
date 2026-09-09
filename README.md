@@ -1,36 +1,39 @@
-# LightVLN-0 + Scout Mini + Odin1
+# LightNav-0 + Scout Mini + Odin1
+
+[![CI: GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/KevinLADLee/lightvln-scout-odin/actions/workflows/ci.yml)
+[![ROS 2 Humble](https://img.shields.io/badge/ROS_2-Humble-22314E?logo=ros&logoColor=white)](https://docs.ros.org/en/humble/)
+[![Ubuntu 22.04](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/22.04/)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 English | [简体中文](README.zh-CN.md)
 
-This project integrates **LightNav-0 with the Scout Mini mobile base and Odin1 sensor** on a real robot. Model inference runs on a GPU server, while the robot computer runs ROS 2 perception, MPC path tracking, and Scout control. A browser provides operation and monitoring.
+Deploy **LightNav-0 on Scout Mini with Odin1**. The GPU server runs model inference; the robot runs ROS 2 perception, MPC path tracking, and Scout control. Operate and monitor the robot from a browser.
 
-Official resources: [LightNav-0 model overview](https://www.lightorigins.com/blog/lightnav-0) · [Scout Mini product page](https://global.agilex.ai/products/scout-mini) · [Odin1 documentation](https://manifoldtechltd.github.io/wiki/odin_series/odin1/)
+[Deployment](#1-deploy-the-gpu-server) · [Hardware setup](docs/hardware.md) · [Web & ROS interfaces](docs/web-adapter.md) · [Contributing](CONTRIBUTING.md)
 
-This repository contains the robot workspace, Odin/Scout drivers, and integration code. **Prepare the inference service and model weights in a separate LightNav-0 checkout.** Start the server before connecting the robot stack.
+## What this integration provides
+
+- **Odin1 perception:** camera images and odometry, with a shared crop and resize pipeline for model input and browser preview.
+- **MPC tracking:** capture-time odometry matching and measured `imu` → `base_link` mounting offsets.
+- **Scout control and console:** task start/stop, manual control, trajectories, tuning, and telemetry, with control ownership, command timeouts, speed limits, and software emergency stop. Physical motion output is disabled by default.
+
+The integration builds on [LightNav-0](https://github.com/lightorigins/LightNav-0), with robot-specific adaptation in `src/integration/lightvln_scout/`. Hardware references: [Scout Mini](https://global.agilex.ai/products/scout-mini) · [Odin1](https://manifoldtechltd.github.io/wiki/odin_series/odin1/).
 
 ## Deployment architecture
 
-| Location | Components | Entry point |
+| Machine | Runs | Connection |
 | --- | --- | --- |
-| GPU server | LightNav-0 model, vLLM inference, LightNav WebSocket service | `ws://<gpu-host>:8050` |
-| Robot computer | Odin1 driver, VLN client, MPC, Scout adapter and base driver | ROS 2 launch files in this repository |
+| GPU server | LightNav-0 model and inference service, in a separate checkout | `ws://<gpu-host>:8050` |
+| Robot computer | This ROS 2 workspace, including Odin and Scout drivers | Connects to the GPU server |
 | Operator computer | Browser console | `http://<robot-host>:8088` |
 
-![ROS 2 node-topic topology for LightVLN-0, Scout Mini, and Odin1, including perception, inference, MPC, base control, task instructions, and status feedback.](docs/assets/ros-topology.png)
-
-The diagram shows the main connections in the default configuration. See [Web and ROS interfaces](docs/web-adapter.md) for details.
-
-## Integration features
-
-- **Odin1 perception:** supplies camera images and odometry for navigation.
-- **Aligned model input and preview:** displays the image submitted for inference with the matching model output.
-- **Path tracking and coordinate alignment:** MPC matches odometry to the image capture time and applies the measured `imu` → `base_link` mounting offset.
-- **Scout Mini control:** coordinates manual/automatic ownership, command expiry, speed limits, software emergency stop, and telemetry. Physical motion output is disabled by default.
-- **Browser console:** provides camera preview, model trajectories, task start/stop, manual control, MPC tuning, and battery voltage.
+![ROS 2 data flow between Odin1 perception, LightNav-0 inference, MPC, Scout Mini control, and the browser console.](docs/assets/ros-topology.png)
 
 ## 1. Deploy the GPU server
 
-The server needs a separate **LightNav-0 checkout, Python 3.11 environment, CUDA GPU, and model weights**. For initial setup on the GPU host:
+Requires a **CUDA GPU, Python 3.11, [uv](https://docs.astral.sh/uv/getting-started/installation/), and model weights**. Prepare these in a separate LightNav-0 checkout on the GPU host.
+
+### First-time setup
 
 ```bash
 git clone https://github.com/lightorigins/LightNav-0.git
@@ -43,9 +46,11 @@ uv run --no-sync hf download LightOriginsHQ/LightNav-0 \
 uv run --no-sync python -c 'import torch; print(torch.cuda.is_available())'
 ```
 
-The CUDA check should print `True`. Keep upstream dependency constraints and the complete checkpoint, including `eval_config.json` and `action_tokenizer/`. Complete Hugging Face login and model access authorization if downloading requires them. Existing installations can skip setup.
+The CUDA check should print `True`. Download the complete checkpoint, including `eval_config.json` and `action_tokenizer/`; sign in to Hugging Face if required. For GPU-specific installation details, see the [upstream installation guide](https://github.com/lightorigins/LightNav-0/tree/a645828d81a8439651172197ca80a75dc1377977#installation).
 
-After preparing the environment and weights, start target-following inference from the **LightNav-0 repository root on the GPU server**:
+### Start inference
+
+From the **LightNav-0 repository root on the GPU server**:
 
 ```bash
 uv run --no-sync lightnav-serve \
@@ -57,15 +62,20 @@ uv run --no-sync lightnav-serve \
   --port 8050
 ```
 
-Wait for `[lightnav-ws] READY`, then connect the robot to `ws://<gpu-host>:8050`.
+Wait for `[lightnav-ws] READY`. The robot will connect to `ws://<gpu-host>:8050`.
 
-`tracking` selects target following; use `--task vln` for instruction navigation. The console's `track/objnav` modes control robot behavior: `track` continuously follows the path, while `objnav` can complete a task on the model's `stop` signal. They do not change the server's `--task`; restart or switch server instances to change model tasks.
+| Use case | Server `--task` | Console mode |
+| --- | --- | --- |
+| Target following | `tracking` | `track`: continuously follow the path |
+| Instruction navigation | `vln` | `objnav`: finish when the model returns `stop` |
+
+Changing the console mode does not change the server task. Restart the server with the required `--task`, or connect to another instance.
 
 ## 2. Prepare the robot computer
 
-The robot stack targets **Ubuntu 22.04 + ROS 2 Humble** and requires the matching system Python, C/C++ build tools, CMake, `colcon`, initialized `rosdep`, and [uv](https://docs.astral.sh/uv/getting-started/installation/). Install ROS using the [ROS 2 Humble guide](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html).
+Requires **Ubuntu 22.04 + ROS 2 Humble**, the matching system Python, C/C++ build tools, CMake, `colcon`, initialized `rosdep`, and `uv`. Start with the [ROS 2 Humble installation guide](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html).
 
-On the robot computer:
+On the **robot computer**:
 
 ```bash
 git clone https://github.com/KevinLADLee/lightvln-scout-odin.git
@@ -74,80 +84,58 @@ cd lightvln-scout-odin
 source scripts/env.bash
 ```
 
-For Zsh, use `source scripts/env.zsh`. Bootstrap creates a `.venv` that retains ROS system packages, installs Python dependencies, and builds the workspace. Omit `--rosdep` if system dependencies are already installed. Keep the server's Python 3.11 environment separate from the robot's ROS environment.
+Bootstrap installs dependencies and builds the workspace in a ROS-compatible `.venv`. Keep it separate from the GPU server's Python environment. In each new shell, source `scripts/env.bash` (Bash) or `scripts/env.zsh` (Zsh). If system dependencies are already installed, omit `--rosdep`.
 
-Follow [Hardware configuration](docs/hardware.md) to configure Scout SocketCAN, Odin USB permissions, topics, and measured sensor mounting offsets.
+Complete [hardware setup](docs/hardware.md): Scout SocketCAN, Odin USB permissions, and sensor mounting measurements.
 
 ## 3. Launch the robot and connect the server
 
-Edit [standard_stack.yaml](src/integration/lightvln_scout/config/standard_stack.yaml), the short robot preset. Set these values under each section's `ros__parameters`:
+Edit [standard_stack.yaml](src/integration/lightvln_scout/config/standard_stack.yaml). Only these robot settings need attention; image processing, interfaces, and MPC load their defaults automatically.
 
-| Section | Settings |
+| Section (`ros__parameters`) | Set once for this robot |
 | --- | --- |
 | `vln_client` | `server_url`: `ws://<gpu-host>:8050` |
-| `robot_launch` | `scout_port` and all six measured `imu_to_base_*` offsets |
-| `scout_adapter` | `hardware_output_enabled`: initially `false` |
+| `robot_launch` | `scout_port` and six measured `imu_to_base_*` mounting offsets |
+| `scout_adapter` | Keep `hardware_output_enabled: false` for the first run |
 
-With **neither driver already running**, start the full stack:
+Start the full stack, including Odin, Scout, and RViz, when both drivers are stopped:
 
 ```bash
 ros2 launch lightvln_scout scout_odin.launch.py
 ```
 
-| Driver state | Launch configuration |
-| --- | --- |
-| Neither Odin nor Scout is running | Use `scout_odin.launch.py` above; it includes Odin RViz |
-| Both drivers are running | Use `controller_only.launch.py` with its default YAML settings |
-
-The inference URL can also be set in the console. For a separate machine preset, use `params_file:=/path/to/robot.yaml`; see [Hardware configuration](docs/hardware.md#parameter-presets).
-
-Open **`http://<robot-host>:8088`** on the operator computer, then:
-
-1. Check the camera, Odin odometry, Scout diagnostics, and inference URL `ws://<gpu-host>:8050`.
-2. For a `tracking` server, select `track`, enter a target-following instruction, and start the task.
-3. Check server request logs, client connection state, inference latency, and returned trajectories.
-4. Inspect inference and MPC with `hardware_output_enabled: false`; final base commands remain zero.
-5. Complete [hardware validation](docs/hardware.md#enable-motion-after-validation), then set `hardware_output_enabled: true` in the YAML and relaunch.
-
-To inspect only the interface without hardware, use the default preset:
+When drivers are already running, or to preview the console without hardware:
 
 ```bash
 ros2 launch lightvln_scout controller_only.launch.py
 ```
 
-Open `http://localhost:8088` to view the console. Images, odometry, and telemetry appear when their topics are available.
+For headless deployment or a separate machine YAML, see [hardware configuration](docs/hardware.md#parameter-presets).
 
-## Build and source synchronization
+Open **`http://<robot-host>:8088`** in a browser (`http://localhost:8088` on the robot):
+
+1. Check the camera, Odin odometry, Scout diagnostics, and inference URL. The URL can also be edited in the console.
+2. Select the console mode from the table above, enter an instruction, and start the task.
+3. Check inference latency, returned trajectories, and MPC behavior while physical output remains locked.
+4. Follow [motion validation](docs/hardware.md#enable-motion-after-validation) before enabling `hardware_output_enabled` and driving the base.
+
+Images and telemetry appear once their publishers are available. Use the console on a trusted robot network; its Web service has no authentication or TLS.
+
+## Development and references
+
+After source or configuration changes, rebuild and restart the stack:
 
 ```bash
 ./scripts/build.bash
-ROS_DOMAIN_ID=199 ROS_LOCALHOST_ONLY=1 ./scripts/test.bash
+./scripts/test.bash
 ```
 
-Rebuild and restart nodes after source or configuration changes. See [Contributing](CONTRIBUTING.md) for test setup and additional checks.
-
-To copy source to a robot over SSH:
-
-```bash
-LIGHTNAV_DEPLOY_HOST='<user>@<robot-host>' \
-LIGHTNAV_DEPLOY_ROOT='lightvln-scout-odin' \
-  ./scripts/deploy_robot.bash
-```
-
-The script synchronizes source, excluding `.local/`, backups, and build outputs. Relative destinations are under the remote user's home. After syncing, run `./scripts/bootstrap.bash --rosdep` in the target directory on the robot. See `./scripts/deploy_robot.bash --help` for authentication options.
-
-## Configuration and references
-
-Use `src/integration/lightvln_scout/config/standard_stack.yaml` for robot settings. The launch files automatically load the internal defaults for image processing, interfaces, and MPC.
-
-- [Hardware configuration](docs/hardware.md): CAN, Odin, topics, mounting TF, and motion validation.
-- [Web and ROS interfaces](docs/web-adapter.md): image processing, control ownership, emergency stop, telemetry, topics, and services.
-- [Contributing](CONTRIBUTING.md): development, tests, and upstream updates.
+- [Hardware configuration](docs/hardware.md): machine presets, devices, mounting TF, and troubleshooting.
+- [Web and ROS interfaces](docs/web-adapter.md): image processing, control behavior, topics, and services.
+- [Contributing](CONTRIBUTING.md): development checks, source synchronization, and upstream updates.
 - [Licensing and third-party code](LICENSES.md): Apache-2.0 and component attribution.
 
-Maintainer: [KevinLADLee](mailto:kevinladlee@gmail.com). Report vulnerabilities via [SECURITY.md](SECURITY.md).
-
-The Web service has no user authentication or TLS. Use a trusted robot network or a configured gateway. Keep machine-specific settings in `.local/` or outside the repository.
+Maintainer: [KevinLADLee](mailto:kevinladlee@gmail.com). Report vulnerabilities privately via [SECURITY.md](SECURITY.md).
 
 ## Upstream code
 

@@ -43,16 +43,22 @@ def test_emergency_reset_cannot_override_external_stop_or_resume_commands(
             Parameter("hardware_output_enabled", value=True)
         ]).successful
         node._set_source("manual", SetBool.Response())
+        node._on_emergency_stop(Bool(data=False))
+        assert not node._emergency_stopped and node._source == "manual"
         command = TwistStamped()
         command.twist.linear.x = 0.1
         node._on_manual(command)
         result = node._emergency_service(None, Trigger.Response())
         assert result.success and node._source == "disabled"
+        node._on_emergency_stop(Bool(data=False))
+        assert node._emergency_stopped
         assert not node._set_source("auto", SetBool.Response()).success
         node._on_emergency_stop(Bool(data=True))
         assert not node._reset_emergency_service(None, Trigger.Response()).success
         node._on_emergency_stop(Bool(data=False))
-        node._emergency_service(None, Trigger.Response())
+        assert node._emergency_stopped and not node._external_emergency
+        assert not node._set_source("manual", SetBool.Response()).success
+        assert not node._set_source("auto", SetBool.Response()).success
         assert node._reset_emergency_service(None, Trigger.Response()).success
         assert node._source == "disabled"
         assert node._manual_command == (0.0, 0.0)

@@ -210,14 +210,15 @@ class ScoutAdapterNode(Node):
     def _on_emergency_stop(self, message: Bool) -> None:
         with self._lock:
             self._external_emergency = bool(message.data)
-            self._emergency_stopped = bool(message.data)
             if message.data:
+                self._emergency_stopped = True
                 self._source = "disabled"
         self._command_tick()
         self._publish_source()
         self._publish_diagnostics()
         self._publish_event(
-            "emergency stop latched" if message.data else "emergency stop cleared"
+            "emergency stop latched" if message.data
+            else "external emergency stop released; latch unchanged"
         )
 
     def _set_manual(self, request, response):

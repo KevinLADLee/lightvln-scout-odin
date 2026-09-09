@@ -35,6 +35,22 @@ For documentation-only changes, run `python3 scripts/check_repository.py`.
 GitHub CI uses the same build and test commands. Record any skipped checks;
 physical motion requires separate [hardware validation](docs/hardware.md#enable-motion-after-validation).
 
+## Sync source to a robot
+
+From the development computer, set the SSH destination and copy the source:
+
+```bash
+LIGHTNAV_DEPLOY_HOST='<user>@<robot-host>' ./scripts/deploy_robot.bash
+```
+
+The default destination is `~/lightvln-scout-odin` on the robot. Set
+`LIGHTNAV_DEPLOY_ROOT` to use another workspace directory. The script excludes
+`.local/`, backups, and build outputs; it does not delete remote files.
+Keep robot calibration and machine settings in a [local preset](docs/hardware.md#parameter-presets)
+so source synchronization does not overwrite them. After syncing, run
+`./scripts/bootstrap.bash --rosdep` in the destination on the robot.
+Authentication options are listed by `./scripts/deploy_robot.bash --help`.
+
 ## Report a problem
 
 Include the commit, OS/ROS versions, reproduction steps and sanitized logs in

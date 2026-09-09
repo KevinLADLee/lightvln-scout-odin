@@ -8,7 +8,14 @@ Run commands from this repository root after sourcing `scripts/env.bash`, or `sc
 
 Both launch files read [standard_stack.yaml](../src/integration/lightvln_scout/config/standard_stack.yaml). It contains the server address, CAN interface, mounting offsets, and physical output switch. Image, interface, and MPC settings load automatically from [defaults.yaml](../src/integration/lightvln_scout/config/defaults.yaml) and node defaults.
 
-For a machine-specific preset, copy that file to `.local/robot.yaml`, edit it, and launch:
+For a machine-specific preset, create a local copy:
+
+```bash
+mkdir -p .local
+cp src/integration/lightvln_scout/config/standard_stack.yaml .local/robot.yaml
+```
+
+Edit `.local/robot.yaml`, then launch with that file:
 
 ```bash
 ros2 launch lightvln_scout scout_odin.launch.py params_file:="$PWD/.local/robot.yaml"
@@ -36,7 +43,14 @@ Follow the [Odin driver instructions](../src/drivers/odin_ros_driver/README.md) 
 
 ## Measure sensor mounting offsets
 
-Both integration launches publish the static transform `imu` → `base_link`. In the YAML's `robot_launch.ros__parameters`, set `imu_to_base_x/y/z` in metres and `imu_to_base_roll/pitch/yaw` in radians using measured mounting values. Default zero offsets are for bench inspection, not hardware calibration. MPC uses the same x, y, and yaw offsets to convert the odometry child pose into the control frame.
+Both integration launches publish the static transform `imu` → `base_link`. Set the following under `robot_launch.ros__parameters`:
+
+| Parameters | Meaning | Unit |
+| --- | --- | --- |
+| `imu_to_base_x/y/z` | Position of the `base_link` origin expressed in the `imu` frame | Metres |
+| `imu_to_base_roll/pitch/yaw` | Orientation of `base_link` relative to `imu` | Radians |
+
+Use measured values; zero offsets are only a bench preset. MPC uses the same x, y, and yaw offsets for planar tracking.
 
 Supply every mounting offset before operating hardware. Resolve duplicate publishers if another node already publishes this TF.
 
@@ -57,8 +71,8 @@ Open `http://<robot-host>:8088` and check images, odometry frames, the inference
 1. Verify mounting transforms and trajectory directions in RViz or recorded data.
 2. Use `ros2 topic info /cmd_vel` to confirm the intended Scout driver subscribes to the output topic.
 3. Check base telemetry and the physical stopping mechanism.
-4. Validate low-speed control with the wheels off the ground before testing in an open area.
-5. Retain measured offsets and subscriber checking, set `scout_adapter.ros__parameters.hardware_output_enabled: true` in the YAML, and relaunch.
+4. Secure the robot with its wheels off the ground. Retain measured offsets and subscriber checking, set `scout_adapter.ros__parameters.hardware_output_enabled: true` in the YAML, and relaunch.
+5. Validate low-speed manual control, stopping, and emergency-stop reset before testing automatic tracking in an open area. Resetting software stop leaves control disabled; start a new control session explicitly.
 
 Default speed limits are an initial configuration. Review `max_linear_speed`, `max_angular_speed`, and MPC limits for the actual base. Console adjustments cannot exceed the adapter's launch-time speed ceilings. Software emergency stop does not replace hardware emergency stop.
 

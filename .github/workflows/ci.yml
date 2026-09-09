@@ -27,6 +27,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+      - name: Trust the mounted workspace for Git checks
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install build tools
         run: |
           apt-get update

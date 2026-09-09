@@ -116,17 +116,18 @@ def main() -> int:
     ]:
         errors.extend(package_errors(package))
     if (root / ".git").exists():
-        tracked = (
-            subprocess.run(
-                ["git", "ls-files", "-z"],
-                cwd=root,
-                capture_output=True,
-                check=True,
-            )
-            .stdout.decode()
-            .split("\0")
+        tracked = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
         )
-        errors.extend(tracked_path_errors([name for name in tracked if name]))
+        if tracked.returncode:
+            errors.append(f"git ls-files failed ({tracked.returncode}): {tracked.stderr.strip()}")
+        else:
+            names = [name for name in tracked.stdout.split("\0") if name]
+            errors.extend(tracked_path_errors(names))
     else:
         print("Source snapshot without .git: skipping the tracked-file check")
     if errors:

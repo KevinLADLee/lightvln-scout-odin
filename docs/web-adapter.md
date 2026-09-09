@@ -1,8 +1,6 @@
 # Web and ROS interfaces
 
-`lightvln_scout` launches the `scout_vln_client` and `scout_vln_web` adapters as ROS nodes `vln_client` and `vln_web`. They reuse upstream VLN transport, ROS controls, and HTTP/WebSocket services. The integration package owns image processing, browser assets, Scout control gates, and telemetry conversion.
-
-The browser connects to the robot's Web service; the robot client connects to GPU inference. See the [main README](../README.md) for deployment.
+The browser connects to the robot's Web service; the robot's VLN client connects to GPU inference. This reference describes image previews, control behavior, and the interfaces available in the default stack. See the [main README](../README.md) for deployment.
 
 ## Inference image and preview
 
@@ -10,13 +8,18 @@ Default preprocessing:
 
 `camera → centered 7:4 crop → 448×256 JPEG → VLN client → inference service`
 
-`ImagePreprocessor` in `lightvln_scout/image_processing.py` supports raw and compressed images, cropping before resizing with equal horizontal and vertical scaling. For example, a 1600×1296 input uses a centered 1596×912 crop. Cropping reduces the visible field of view; match the dimensions to the deployed model's preprocessing.
+Raw and compressed camera inputs use the same crop-before-resize pipeline, preserving aspect ratio. For example, a 1600×1296 input uses a centered 1596×912 crop. Match the output dimensions to the deployed model; cropping reduces the visible field of view.
 
 For a different checkpoint, override `image_width`, `image_height`, and `image_fit` consistently under `vln_client` and `vln_web` in the machine preset. Defaults are 448, 256, and `center_crop`; `stretch` enables direct stretching. The defaults correspond to model input height×width of 256×448.
 
-When an inference response completes, the client publishes the JPEG actually submitted for that request on `vln/input_image/compressed`. The Web service uses those bytes directly, so previews advance at completed-response cadence and include inference latency. The browser compares image and response capture timestamps as strings, overlays pointing markers only on matching frames, and sizes the canvas to the actual JPEG dimensions.
+The preview label identifies which image is shown:
 
-`VLN INPUT` identifies a completed inference input frame; `CAMERA` identifies an idle preview processed with the same crop and resize settings.
+| Label | Image shown | Update timing |
+| --- | --- | --- |
+| `CAMERA` | Idle camera preview, using the model's crop and resize settings | Camera preview rate |
+| `VLN INPUT` | Exact JPEG submitted for a completed inference request | Once each inference response completes |
+
+Inference input images are published on `vln/input_image/compressed` with their capture timestamp. The browser overlays pointing markers only when the image and response timestamps match. The `VLN INPUT` preview therefore includes inference latency.
 
 ## Console behavior
 
@@ -89,4 +92,4 @@ The table retains relative names from the interface definitions. Relative names 
 | `robot/emergency_stop` | `std_srvs/Trigger` | Latch software stop |
 | `robot/reset_emergency_stop` | `std_srvs/Trigger` | Clear the stop latch without resuming control |
 
-For implementation details, see the [VLN client](../src/lightnav/vln_client/README.md) and [MPC controller](../src/lightnav/vln_mpc/README.md).
+The integration executables `scout_vln_client` and `scout_vln_web` run as ROS nodes `vln_client` and `vln_web`, reusing upstream transport and Web/ROS controls. For implementation details, see the [VLN client](../src/lightnav/vln_client/README.md) and [MPC controller](../src/lightnav/vln_mpc/README.md).
