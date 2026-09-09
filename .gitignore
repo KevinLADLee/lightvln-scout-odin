@@ -25,7 +25,15 @@ htmlcov/
 /.local/
 /.backups/
 /.env
-/.env.local
+/.env.*
+!/.env.example
+
+# Local code intelligence databases and agent caches
+/AGENTS.md
+/CLAUDE.md
+/.gitnexus/
+/.claude/
+/.codex/
 
 # Editor and operating-system files
 /.idea/

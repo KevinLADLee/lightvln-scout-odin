@@ -4,11 +4,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import IncludeLaunchDescription, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+from lightvln_scout.launch_config import preset_launch_arguments
 from lightvln_scout.standard_stack import standard_stack_nodes
 
 
@@ -36,7 +37,7 @@ def _stack(
     context,
     *,
     stack_params,
-    mpc_params,
+    preset_params,
 ):
     imu_to_base = [
         float(LaunchConfiguration("imu_to_base_x").perform(context)),
@@ -45,11 +46,12 @@ def _stack(
     ]
     return standard_stack_nodes(
         stack_params=stack_params,
-        mpc_params=mpc_params,
+        preset_params=preset_params,
+        params_file=LaunchConfiguration("params_file"),
         server_url=LaunchConfiguration("server_url"),
         web_port=LaunchConfiguration("web_port"),
         hardware_output_enabled=LaunchConfiguration("motion_enabled"),
-        require_output_subscriber="true",
+        require_output_subscriber=LaunchConfiguration("require_output_subscriber"),
         imu_to_base_xyyaw=imu_to_base,
     )
 
@@ -57,26 +59,12 @@ def _stack(
 def generate_launch_description() -> LaunchDescription:
     share = get_package_share_directory("lightvln_scout")
     odin_share = get_package_share_directory("odin_ros_driver")
-    stack_params = os.path.join(share, "config", "standard_stack.yaml")
-    mpc_params = os.path.join(share, "config", "upstream_mpc.yaml")
+    stack_params = os.path.join(share, "config", "defaults.yaml")
+    preset_params = os.path.join(share, "config", "standard_stack.yaml")
     odin_launch = os.path.join(odin_share, "launch", "odin1_ros2.launch.py")
-    arguments = [
-        DeclareLaunchArgument(
-            "server_url", default_value="",
-            description="LightNav WebSocket URL; empty until configured in the web UI"
-        ),
-        DeclareLaunchArgument("web_port", default_value="8088"),
-        DeclareLaunchArgument("motion_enabled", default_value="false"),
-        DeclareLaunchArgument("launch_scout_base", default_value="false"),
-        DeclareLaunchArgument("scout_port", default_value="can0"),
-        # Identity is for bench inspection; supply measured offsets for hardware.
-        DeclareLaunchArgument("imu_to_base_x", default_value="0.0"),
-        DeclareLaunchArgument("imu_to_base_y", default_value="0.0"),
-        DeclareLaunchArgument("imu_to_base_z", default_value="0.0"),
-        DeclareLaunchArgument("imu_to_base_roll", default_value="0.0"),
-        DeclareLaunchArgument("imu_to_base_pitch", default_value="0.0"),
-        DeclareLaunchArgument("imu_to_base_yaw", default_value="0.0"),
-    ]
+    arguments = preset_launch_arguments(
+        preset_params, defaults_file=stack_params, profile="scout_odin",
+    )
     static_tf = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
@@ -96,7 +84,7 @@ def generate_launch_description() -> LaunchDescription:
         function=_stack,
         kwargs={
             "stack_params": stack_params,
-            "mpc_params": mpc_params,
+            "preset_params": preset_params,
         },
     )
     scout_base = OpaqueFunction(function=_scout_base)

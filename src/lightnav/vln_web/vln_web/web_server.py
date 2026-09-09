@@ -117,7 +117,7 @@ def parse_mpc_config(value: Any) -> dict[str, float]:
             raise ValueError(f"{name} must be numeric")
         try:
             number = float(raw)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"{name} must be numeric") from exc
         if not math.isfinite(number):
             raise ValueError(f"{name} must be finite")
@@ -141,7 +141,7 @@ def parse_manual_limits(value: Any) -> dict[str, float]:
             raise ValueError(f"{name} must be numeric")
         try:
             number = float(raw)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"{name} must be numeric") from exc
         if not math.isfinite(number) or number <= 0.0:
             raise ValueError(f"{name} must be positive and finite")
@@ -961,11 +961,14 @@ class WebServer:
             if self._controller is not websocket:
                 await self._input_error(websocket, "control is not acquired")
                 return
+            if any(isinstance(payload.get(axis), bool) for axis in ("x", "y", "z")):
+                await self._input_error(websocket, "twist must be numeric")
+                return
             try:
                 linear = float(payload.get("x", 0.0))
                 lateral = float(payload.get("y", 0.0))
                 angular = float(payload.get("z", 0.0))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 await self._input_error(websocket, "twist must be numeric")
                 return
             if not all(

@@ -1,0 +1,10 @@
+vln_client — LightNav-derived ROS 2 package
+
+Source: https://github.com/lightorigins/LightNav-0/tree/a645828d81a8439651172197ca80a75dc1377977/robot_deploy/src/vln_client
+Upstream authors: Light Origins Team; package maintainer xiaoyang (Lightrobo).
+License: Apache-2.0; see LICENSE.
+
+This is a modified snapshot maintained in lightvln-scout-odin. Local changes
+include deployment dependencies, input validation, lifecycle and control
+handling, and regression tests. See ../UPSTREAM_VERSION in the source tree
+and the lightvln-scout-odin Git history for changes.

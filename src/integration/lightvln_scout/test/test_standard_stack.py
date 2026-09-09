@@ -11,7 +11,7 @@ def test_standard_stack_keeps_original_lightnav_control_chain(
     monkeypatch.setenv("ROS_LOG_DIR", str(tmp_path))
     nodes = standard_stack_nodes(
         stack_params="stack.yaml",
-        mpc_params="mpc.yaml",
+        preset_params="robot.yaml",
         server_url="ws://server:8050",
         web_port=8088,
         hardware_output_enabled=False,
@@ -30,7 +30,7 @@ def test_standard_stack_keeps_original_lightnav_control_chain(
 
 
 def test_upstream_mpc_matches_default_odin_odometry_frames():
-    config_path = Path(__file__).parents[1] / "config" / "upstream_mpc.yaml"
+    config_path = Path(__file__).parents[1] / "config" / "defaults.yaml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     parameters = config["vln_mpc"]["ros__parameters"]
 

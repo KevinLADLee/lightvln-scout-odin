@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ros-humble:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base-jammy
+    timeout-minutes: 30
+    env:
+      ROS_DISTRO: humble
+      ROS_DOMAIN_ID: "199"
+      ROS_LOCALHOST_ONLY: "1"
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential cmake git rsync zsh python3-pip python3-venv python3-packaging python3-colcon-common-extensions python3-rosdep
+          python3 -m pip install 'uv==0.8.22'
+          rosdep update --rosdistro humble
+      - name: Bootstrap and build all packages
+        run: ./scripts/bootstrap.bash --rosdep --parallel-workers 2 --cmake-args -DCMAKE_BUILD_TYPE=Release
+      - name: Check source, documentation, and Python tests
+        run: ./scripts/test.bash
+      - name: Test vendored Scout SDK and console
+        run: |
+          source scripts/env.bash
+          ctest --test-dir build/agilex_ugv_sdk --output-on-failure
+          .venv/bin/python -m pytest -q src/drivers/scout_ros2/scout_base/test
+      - name: Validate shell syntax
+        run: |
+          for script in scripts/*.bash; do bash -n "$script"; done
+          zsh -n scripts/env.zsh
+      - name: Retain build and test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ros-humble-logs
+          path: log/
+          retention-days: 7

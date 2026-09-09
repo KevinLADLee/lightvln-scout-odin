@@ -1,101 +1,76 @@
 # Hardware configuration
 
-Run commands from the checkout root after sourcing `scripts/env.bash` (or
-`scripts/env.zsh`). Replace angle-bracket placeholders before executing examples.
+This guide covers Scout Mini and Odin1 configuration on the robot. See the [main README](../README.md) for the deployment sequence and [server setup](../README.md#1-deploy-the-gpu-server) for inference setup.
 
-## Configure your devices
+Run commands from this repository root after sourcing `scripts/env.bash`, or `scripts/env.zsh` for Zsh.
 
-The provided integration configuration expects:
+## Parameter presets
 
-| Input | Default | Configuration |
+Both launch files read [standard_stack.yaml](../src/integration/lightvln_scout/config/standard_stack.yaml). It contains the server address, CAN interface, mounting offsets, and physical output switch. Image, interface, and MPC settings load automatically from [defaults.yaml](../src/integration/lightvln_scout/config/defaults.yaml) and node defaults.
+
+For a machine-specific preset, copy that file to `.local/robot.yaml`, edit it, and launch:
+
+```bash
+ros2 launch lightvln_scout scout_odin.launch.py params_file:="$PWD/.local/robot.yaml"
+```
+
+The selected file overlays the robot preset and may contain only the sections and parameters being changed. Advanced overrides use the corresponding node's `ros__parameters`, for example `vln_mpc` for MPC or `vln_web` for the Web port. Restart after editing. Explicit launch arguments remain available for temporary overrides.
+
+## Devices and topics
+
+| Input or interface | Default | Configuration |
 | --- | --- | --- |
-| RGB image | `/odin1/image/undistorted`, raw `bgr8` or `rgb8` | `vln_client` and `vln_web` in `config/standard_stack.yaml` |
-| Odometry | `/odin1/odometry_highfreq`, `odom` → `imu` | `vln_web` in `standard_stack.yaml`; `vln_mpc` in `upstream_mpc.yaml` |
-| Scout command | `/cmd_vel`, `geometry_msgs/Twist` | `scout_adapter.output_topic` in `standard_stack.yaml` |
-| Scout telemetry | `/scout_status` | `scout_adapter.status_topic` in `standard_stack.yaml` |
-| CAN interface | `can0` | Launch argument `scout_port` |
+| RGB image | `/odin1/image/undistorted`, raw `bgr8` or `rgb8` | `vln_client.image_topic` and `vln_web.image_topic` |
+| Odometry | `/odin1/odometry_highfreq`, `odom` → `imu` | `vln_web.odom_topic` and `vln_mpc.odom_topic` |
+| Scout velocity command | `/cmd_vel`, `geometry_msgs/Twist` | `scout_adapter.output_topic` |
+| Scout telemetry | `/scout_status` | `scout_adapter.status_topic` |
+| CAN interface | `can0` | `robot_launch.scout_port` in `standard_stack.yaml` |
 
-Configuration paths above are relative to
-`src/integration/lightvln_scout/`. Align both image consumers and both odometry
-consumers when changing topics. Rebuild after editing package configuration.
+For a custom sensor setup, add overrides under the corresponding node's `ros__parameters` in your machine preset. Update both client and Web nodes when changing image topics, and both MPC and Web nodes when changing odometry topics. Restart nodes after configuration changes.
 
-Configure the SocketCAN interface and bitrate for your particular Scout hardware,
-using the [Scout driver instructions](../src/drivers/scout_ros2/README.md).
-This workspace does not configure CAN automatically or assume an existing
-interface is ready. The optional Scout driver publishes separate wheel odometry
-on `/scout/wheel_odom` with frames `scout_wheel_odom` → `scout_wheel_base`.
-Odin remains the authoritative odometry source for navigation.
+Configure SocketCAN and the bitrate for the actual base using the [Scout driver instructions](../src/drivers/scout_ros2/README.md).
 
-Follow the [Odin driver instructions](../src/drivers/odin_ros_driver/README.md)
-for USB permissions and sensor configuration. Camera images and odometry must
-use compatible timestamps so MPC can look up the pose at image capture time.
-The full launch includes the driver's RViz window; for headless use, start the
-required driver nodes separately and use `controller_only.launch.py`.
+Follow the [Odin driver instructions](../src/drivers/odin_ros_driver/README.md) for USB permissions and sensor parameters. Images and odometry must share a compatible time base so MPC can match poses to image capture times.
+
+`scout_odin.launch.py` includes the Odin driver's RViz window. For headless deployment, start the required driver nodes separately and use `controller_only.launch.py`.
 
 ## Measure sensor mounting offsets
 
-Both integration launches publish `imu` → `base_link`. Configure the transform
-for your own mounting arrangement using `imu_to_base_x/y/z` (metres) and
-`imu_to_base_roll/pitch/yaw` (radians). The public defaults are an identity
-transform for bench inspection, **not a robot calibration**. MPC uses the same
-x/y/yaw offset to convert the odometry child pose into the control frame.
+Both integration launches publish the static transform `imu` → `base_link`. In the YAML's `robot_launch.ros__parameters`, set `imu_to_base_x/y/z` in metres and `imu_to_base_roll/pitch/yaw` in radians using measured mounting values. Default zero offsets are for bench inspection, not hardware calibration. MPC uses the same x, y, and yaw offsets to convert the odometry child pose into the control frame.
 
-Supply all measured offsets when operating hardware. If another node already
-publishes this transform, resolve the duplicate publisher before launching.
+Supply every mounting offset before operating hardware. Resolve duplicate publishers if another node already publishes this TF.
 
 ## First run with physical output disabled
 
-If the Odin driver is already running and the Scout driver is not:
+With both drivers already running, keep `hardware_output_enabled: false` in the robot preset and run:
 
 ```bash
-ros2 launch lightvln_scout controller_only.launch.py \
-  server_url:=ws://<inference-host>:<port> \
-  launch_scout_base:=true \
-  scout_port:=<can-interface> \
-  require_output_subscriber:=true \
-  motion_enabled:=false \
-  imu_to_base_x:=<x-metres> \
-  imu_to_base_y:=<y-metres> \
-  imu_to_base_z:=<z-metres> \
-  imu_to_base_roll:=<roll-radians> \
-  imu_to_base_pitch:=<pitch-radians> \
-  imu_to_base_yaw:=<yaw-radians>
+ros2 launch lightvln_scout controller_only.launch.py
 ```
 
-If the Scout driver is already running, use `launch_scout_base:=false`. If neither
-driver is running, use `scout_odin.launch.py` with the same device and mounting
-arguments, omitting `require_output_subscriber` (the full launch always requires
-an output subscriber).
+If only Odin is running, add `controller_only.ros__parameters.launch_scout_base: true` to the machine preset to start Scout. If neither driver is running, use `scout_odin.launch.py`. Add `params_file` when using a separate machine preset.
 
-Open `http://<robot-host>:8088`. Confirm the image, odometry frames, model path,
-and diagnostics. Starting VLN with `motion_enabled:=false` allows inference and
-MPC inspection while the adapter forces final commands to zero.
+Open `http://<robot-host>:8088` and check images, odometry frames, the inference URL, and diagnostics. Verify the model path on the GPU server. With `hardware_output_enabled: false`, tasks can exercise inference and MPC while the adapter forces final velocity commands to zero.
 
 ## Enable motion after validation
 
-1. Verify the measured transform and path directions in RViz or recorded data.
-2. Confirm `ros2 topic info /cmd_vel` shows the intended Scout driver subscriber.
-3. Check hardware telemetry and the robot's physical stopping mechanism.
-4. Validate low-speed control with the wheels off the ground before an open-area test.
-5. Relaunch with your measured offsets, `motion_enabled:=true`, and subscriber
-   checking enabled. Do not use bench settings to bypass the driver check.
+1. Verify mounting transforms and trajectory directions in RViz or recorded data.
+2. Use `ros2 topic info /cmd_vel` to confirm the intended Scout driver subscribes to the output topic.
+3. Check base telemetry and the physical stopping mechanism.
+4. Validate low-speed control with the wheels off the ground before testing in an open area.
+5. Retain measured offsets and subscriber checking, set `scout_adapter.ros__parameters.hardware_output_enabled: true` in the YAML, and relaunch.
 
-The supplied limits are a conservative starting configuration, not a guarantee
-for every installation. Review `max_linear_speed`, `max_angular_speed`, and MPC
-limits for your robot. Runtime web changes cannot raise adapter speed limits
-above the values supplied at launch. The software stop does not replace a
-hardware emergency stop.
+Default speed limits are an initial configuration. Review `max_linear_speed`, `max_angular_speed`, and MPC limits for the actual base. Console adjustments cannot exceed the adapter's launch-time speed ceilings. Software emergency stop does not replace hardware emergency stop.
 
 ## Troubleshooting
 
 | Symptom | Checks |
 | --- | --- |
-| No camera image | Driver running, image topic and transport, publisher QoS, ROS domain |
-| No odometry match | Frame IDs, sensor timestamp domain, camera/odometry timing |
+| No camera image | Driver state, image topic and transport, publisher QoS, ROS domain |
+| Odometry cannot be matched | Frame names, time base, and image/odometry timestamp difference |
 | Adapter disconnected | Scout driver subscriber, `/cmd_vel` remapping, ROS domain |
-| Connected but no motion | Hardware output lock, emergency latch, control owner, fresh commands and speed limits |
-| Telemetry unavailable | `/scout_status` publisher and configured topic; messages expire after 2 seconds by default |
-| Wi-Fi panel unavailable | Optional NetworkManager/`nmcli` installation and user permissions |
+| Connected but no motion | Physical output lock, emergency latch, ownership, command freshness, speed limits |
+| Telemetry unavailable | `/scout_status` publisher and configured topic; data expires after 2 seconds by default |
+| Wi-Fi panel unavailable | Optional NetworkManager/`nmcli` installation and permissions |
 
-Connection based on an output subscriber is not proof of a healthy CAN bus.
-Use the driver tools for hardware-level inspection.
+An output subscriber does not establish CAN health. Use driver diagnostics to investigate base communication problems.

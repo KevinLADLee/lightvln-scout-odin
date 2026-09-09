@@ -65,7 +65,7 @@ def test_explicit_host_uses_remote_home_and_excludes_private_data(deployment_env
     result = subprocess.run(["bash", str(SCRIPT)], env=env, capture_output=True)
     assert result.returncode == 0, result.stderr
     arguments = calls.read_text().splitlines()
-    assert "robot-user@robot.example:lightvln-scout/" in arguments
+    assert "robot-user@robot.example:lightvln-scout-odin/" in arguments
     assert "--exclude=.local/" in arguments
     assert "--exclude=.backups/" in arguments
     assert "--exclude=image/" in arguments

@@ -1,3 +1,3 @@
 repository: https://github.com/manifoldsdk/odin_ros_driver.git
 commit: a592cf2cc08bc8bfb0dceae44ef31f3a6bd77822
-note: This snapshot includes project-specific configuration changes.
+note: This snapshot includes project-specific configuration and runtime-path changes; ROS manifests declare direct CMake and launch dependencies.

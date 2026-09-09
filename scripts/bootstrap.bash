@@ -36,6 +36,14 @@ export MPLCONFIGDIR="${MPLCONFIGDIR:-${WORKSPACE_ROOT}/.matplotlib}"
 export COLCON_EXTENSION_BLOCKLIST="colcon_core.event_handler.desktop_notification${COLCON_EXTENSION_BLOCKLIST:+:${COLCON_EXTENSION_BLOCKLIST}}"
 mkdir -p "${UV_CACHE_DIR}" "${MPLCONFIGDIR}"
 
+if (( RUN_ROSDEP )); then
+  rosdep install \
+    --from-paths "${SOURCE_PATHS[@]}" \
+    --ignore-src \
+    --rosdistro "${ROS_DISTRO_NAME}" \
+    -y
+fi
+
 if [[ ! -x "${WORKSPACE_ROOT}/.venv/bin/python" ]]; then
   uv venv \
     --python /usr/bin/python3 \
@@ -50,39 +58,17 @@ fi
 
 if ! "${WORKSPACE_ROOT}/.venv/bin/python" \
   "${WORKSPACE_ROOT}/scripts/check_python_env.py"; then
-  # The reused upstream vln_client/vln_web packages use aiohttp. Unlike the
-  # workspace overlay below, its small pure-Python dependency tree is not
-  # expected to be supplied by ROS or the host PyTorch installation.
+  # Resolve the complete Python dependency tree into the overlay. ROS binary
+  # modules stay in the system site-packages; NumPy remains below version 2.
   uv pip install \
     --python "${WORKSPACE_ROOT}/.venv/bin/python" \
-    "aiohttp>=3.8,<4"
-
-  # uv does not treat inherited system-site packages as resolver-owned. Install
-  # only this workspace's explicit overlay packages and preserve the ROS and
-  # dependency trees supplied by the host.
-  uv pip install \
-    --python "${WORKSPACE_ROOT}/.venv/bin/python" \
-    --no-deps \
-    --requirements "${WORKSPACE_ROOT}/requirements.txt"
-
-  # Test tools are independent of CUDA, so their small pure-Python dependency
-  # trees can be resolved normally inside the venv.
-  uv pip install \
-    --python "${WORKSPACE_ROOT}/.venv/bin/python" \
+    --requirements "${WORKSPACE_ROOT}/requirements.txt" \
     --requirements "${WORKSPACE_ROOT}/requirements-dev.txt"
 
   "${WORKSPACE_ROOT}/.venv/bin/python" \
     "${WORKSPACE_ROOT}/scripts/check_python_env.py"
 else
   echo "Python overlay already satisfies requirements; skipping downloads"
-fi
-
-if (( RUN_ROSDEP )); then
-  rosdep install \
-    --from-paths "${SOURCE_PATHS[@]}" \
-    --ignore-src \
-    --rosdistro "${ROS_DISTRO_NAME}" \
-    -y
 fi
 
 if (( RUN_BUILD )); then

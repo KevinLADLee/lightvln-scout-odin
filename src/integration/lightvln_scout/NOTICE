@@ -1,0 +1,9 @@
+LightVLN Scout Odin integration
+
+Project-maintained integration code is distributed under Apache-2.0.
+Maintainer: KevinLADLee <kevinladlee@gmail.com>
+Repository: https://github.com/KevinLADLee/lightvln-scout-odin
+
+The Web UI is derived from the Apache-2.0 LightNav-0 vln_web package.
+Retain web/NOTICE for the original attribution. The upstream components
+under src/lightnav and src/drivers retain their own licenses.

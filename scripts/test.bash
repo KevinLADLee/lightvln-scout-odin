@@ -25,6 +25,17 @@ if [[ -f "${WORKSPACE_ROOT}/install/setup.bash" ]]; then
 fi
 set -u
 cd "${WORKSPACE_ROOT}"
+# Tests construct ROS publishers. Default to a localhost-only test domain;
+# callers may choose another unused domain explicitly.
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-199}"
+export ROS_LOCALHOST_ONLY="${ROS_LOCALHOST_ONLY:-1}"
+export ROS_LOG_DIR="${ROS_LOG_DIR:-${WORKSPACE_ROOT}/log/test-ros}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-${WORKSPACE_ROOT}/.matplotlib}"
+"${PYTHON_BIN}" -c 'from scout_msgs.msg import ScoutStatus' || {
+  echo "Build this checkout first with scripts/build.bash to generate scout_msgs." >&2
+  exit 1
+}
+"${PYTHON_BIN}" "${WORKSPACE_ROOT}/scripts/check_repository.py"
 export PYTHONPATH="${INTEGRATION_SRC}/lightvln_scout:${LIGHTNAV_SRC}/vln_client:${LIGHTNAV_SRC}/vln_web:${LIGHTNAV_SRC}/vln_mpc${PYTHONPATH:+:${PYTHONPATH}}"
 "${PYTHON_BIN}" -m ruff check --config "${WORKSPACE_ROOT}/ruff.toml" \
   "${INTEGRATION_SRC}/lightvln_scout/launch" \
@@ -34,7 +45,8 @@ export PYTHONPATH="${INTEGRATION_SRC}/lightvln_scout:${LIGHTNAV_SRC}/vln_client:
   "${LIGHTNAV_SRC}/vln_client/test" \
   "${LIGHTNAV_SRC}/vln_web/vln_web" \
   "${LIGHTNAV_SRC}/vln_web/test" \
-  "${WORKSPACE_ROOT}/scripts/check_python_env.py"
+  "${WORKSPACE_ROOT}/scripts" \
+  "${WORKSPACE_ROOT}/tests"
 "${PYTHON_BIN}" -m ruff check --select E,F \
   "${LIGHTNAV_SRC}/vln_mpc/vln_mpc" \
   "${LIGHTNAV_SRC}/vln_mpc/test"
@@ -43,4 +55,5 @@ export PYTHONPATH="${INTEGRATION_SRC}/lightvln_scout:${LIGHTNAV_SRC}/vln_client:
   "${LIGHTNAV_SRC}/vln_client/test" \
   "${LIGHTNAV_SRC}/vln_web/test" \
   "${LIGHTNAV_SRC}/vln_mpc/test" \
+  "${WORKSPACE_ROOT}/tests" \
   "$@"

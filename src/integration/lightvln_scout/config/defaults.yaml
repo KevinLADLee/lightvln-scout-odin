@@ -1,0 +1,49 @@
+# Internal Scout/Odin defaults, loaded before standard_stack.yaml.
+# Parameters matching node defaults are omitted.
+scout_odin:
+  ros__parameters:
+    launch_scout_base: true
+
+controller_only:
+  ros__parameters:
+    launch_scout_base: false
+
+vln_client:
+  ros__parameters:
+    image_topic: "/odin1/image/undistorted"
+    # Keep inference and Web preview dimensions aligned.
+    image_width: 448
+    image_height: 256
+
+vln_web:
+  ros__parameters:
+    port: 8088
+    image_topic: "/odin1/image/undistorted"
+    image_width: 448
+    image_height: 256
+    odom_topic: "/odin1/odometry_highfreq"
+    sent_command_topic: "/lightvln_scout/cmd_vel_sent"
+    manual_limits_node: "/scout_adapter"
+    manual_linear_limit: 0.30
+    manual_angular_limit: 0.60
+    manual_linear_accel: 0.50
+    manual_angular_accel: 1.00
+    wifi_use_sudo: false
+
+scout_adapter:
+  ros__parameters:
+    require_output_subscriber: true
+
+vln_mpc:
+  ros__parameters:
+    odom_topic: "/odin1/odometry_highfreq"
+    odom_frame: "odom"
+    odom_child_frame: "imu"
+    base_frame: "base_link"
+    track_v_max: 0.30
+    objnav_v_max: 0.20
+    w_max: 0.60
+    a_max_v: 0.50
+    a_max_w: 1.00
+    odom_match_max_gap_s: 0.10
+    odom_timeout_s: 0.30

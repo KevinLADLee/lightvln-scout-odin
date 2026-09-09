@@ -35,6 +35,13 @@ def main() -> int:
     for filename in ("requirements.txt", "requirements-dev.txt"):
         requested.extend(requirements(root / filename))
     failures = []
+    # These come from ROS/apt, not the Python overlay. Check them explicitly so
+    # an otherwise valid venv does not conceal a missing ROS installation.
+    for module in ("rclpy", "cv2", "colcon_core", "launch_ros"):
+        try:
+            importlib.import_module(module)
+        except Exception as exc:  # noqa: BLE001 - binary imports can fail at runtime
+            failures.append(f"{module}: {exc}; source ROS and install system dependencies")
     for item in requested:
         distribution = item.name
         try:

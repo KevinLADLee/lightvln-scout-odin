@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible installation, software, or integration problem.
+body:
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Commit, Ubuntu/ROS/Python versions, architecture, and connected hardware.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction and expected behavior
+      description: Include commands, relevant parameters, actual behavior, and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs and test results
+      description: Remove passwords, tokens, private network details, and identifiable camera images.
+  - type: checkboxes
+    attributes:
+      label: Scope
+      options:
+        - label: I have stated whether this was tested with motion disabled, simulated inputs, or physical hardware.
+          required: true

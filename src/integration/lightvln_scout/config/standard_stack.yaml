@@ -1,46 +1,19 @@
+# Robot settings: edit once before deployment.
 vln_client:
   ros__parameters:
-    server_url: ""  # Set in the web UI or pass the server_url launch argument.
-    image_topic: "/odin1/image/undistorted"
-    image_transport: "raw"
-    # Match the checkpoint video_size (height, width); preserve geometry by cropping.
-    image_width: 448
-    image_height: 256
-    image_fit: "center_crop"
-    input_image_topic: "vln/input_image/compressed"
+    server_url: ""  # e.g. ws://192.168.1.10:8050
 
-vln_web:
+robot_launch:
   ros__parameters:
-    host: "0.0.0.0"
-    port: 8088
-    image_topic: "/odin1/image/undistorted"
-    image_transport: "raw"
-    # Match the checkpoint video_size (height, width); preserve geometry by cropping.
-    image_width: 448
-    image_height: 256
-    image_fit: "center_crop"
-    input_image_topic: "vln/input_image/compressed"
-    odom_topic: "/odin1/odometry_highfreq"
-    sent_command_topic: "/lightvln_scout/cmd_vel_sent"
-    controller_node: "/vln_mpc"
-    controller_config_enabled: true
-    manual_limits_node: "/scout_adapter"
-    manual_linear_limit: 0.30
-    manual_angular_limit: 0.60
-    manual_linear_accel: 0.50
-    manual_angular_accel: 1.00
-    wifi_use_sudo: false
+    scout_port: "can0"
+    # Measured imu -> base_link transform: metres and radians.
+    imu_to_base_x: 0.0
+    imu_to_base_y: 0.0
+    imu_to_base_z: 0.0
+    imu_to_base_roll: 0.0
+    imu_to_base_pitch: 0.0
+    imu_to_base_yaw: 0.0
 
 scout_adapter:
   ros__parameters:
-    status_topic: "/scout_status"
-    status_timeout_s: 2.0
-    output_topic: "/cmd_vel"
-    sent_command_topic: "/lightvln_scout/cmd_vel_sent"
-    emergency_stop_topic: "/lightvln_scout/emergency_stop"
-    control_rate_hz: 20.0
-    input_watchdog_s: 0.35
-    max_linear_speed: 0.30
-    max_angular_speed: 0.60
     hardware_output_enabled: false
-    require_output_subscriber: true

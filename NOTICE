@@ -1,0 +1,21 @@
+LightVLN Scout Odin
+Copyright 2026 KevinLADLee
+
+Project-owned integration code, documentation, and tooling are licensed under
+the Apache License, Version 2.0. See LICENSE.
+Maintainer: KevinLADLee <kevinladlee@gmail.com>
+Repository: https://github.com/KevinLADLee/lightvln-scout-odin
+
+This project integrates LightNav-0 with Scout Mini and Odin1. It includes
+modified LightNav robot-side packages and vendored hardware drivers:
+
+- LightNav-0: Light Origins Team; package maintainer xiaoyang (Lightrobo).
+  https://github.com/lightorigins/LightNav-0
+- Odin ROS driver: Copyright 2025 Manifold Tech Ltd.
+  https://github.com/manifoldsdk/odin_ros_driver
+- Scout ROS 2 and AgileX UGV SDK: original authors and copyright holders are
+  identified in their source headers, licenses, and notices under src/drivers/.
+
+Retain the component-specific licenses and attribution notices. In particular,
+the Scout wheel Xacro files retain their BSD-3-Clause terms. See LICENSES.md
+and the UPSTREAM_VERSION files for the scope and origin of each component.

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 DEPLOY_HOST="${LIGHTNAV_DEPLOY_HOST:-}"
-DEPLOY_ROOT="${LIGHTNAV_DEPLOY_ROOT:-lightvln-scout}"
+DEPLOY_ROOT="${LIGHTNAV_DEPLOY_ROOT:-lightvln-scout-odin}"
 ASK_PASSWORD=0
 SSH_PREFIX=()
 RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new"
@@ -15,11 +15,13 @@ Usage: LIGHTNAV_DEPLOY_HOST=user@robot-host ./scripts/deploy_robot.bash [--ask-p
 
 LIGHTNAV_DEPLOY_HOST  Required SSH hostname or alias, optionally prefixed by user@.
                      Use an SSH alias for IPv6 addresses or custom ports.
-LIGHTNAV_DEPLOY_ROOT  Remote directory; default: lightvln-scout under remote home.
+LIGHTNAV_DEPLOY_ROOT  Remote directory; default: lightvln-scout-odin under remote home.
                      Absolute paths are supported. Use letters, digits, _, -, ., /;
-                     spaces, shell expressions, and parent traversal are rejected.
+                     spaces, shell expressions, dot components, and empty components
+                     are rejected. Do not use a symlink as the remote destination.
 
 Copies source with rsync; does not build, restart services, or delete remote files.
+Preserves safe relative symlinks; never copies a symlink target's contents.
 --ask-password       Prompt for an SSH password using sshpass.
 -h, --help           Show this help without making a connection.
 USAGE
@@ -42,9 +44,8 @@ if [[ ! "${DEPLOY_HOST}" =~ ^([[:alnum:]_][[:alnum:]_.-]*@)?[[:alnum:]_][[:alnum
   echo "Invalid LIGHTNAV_DEPLOY_HOST; use an SSH hostname or alias." >&2
   exit 2
 fi
-if [[ ! "${DEPLOY_ROOT}" =~ ^[[:alnum:]_/.][[:alnum:]_./-]*$ \
-   || "${DEPLOY_ROOT}" == / || "${DEPLOY_ROOT}" == . \
-   || "/${DEPLOY_ROOT}/" == */../* ]]; then
+if [[ ! "${DEPLOY_ROOT}" =~ ^/?[[:alnum:]_.][[:alnum:]_.-]*(/[[:alnum:]_.][[:alnum:]_.-]*)*$ \
+   || "/${DEPLOY_ROOT}/" == */./* || "/${DEPLOY_ROOT}/" == */../* ]]; then
   echo "Invalid LIGHTNAV_DEPLOY_ROOT; supply a dedicated workspace directory." >&2
   exit 2
 fi
@@ -67,7 +68,7 @@ if ! command -v rsync >/dev/null 2>&1; then
 fi
 "${SSH_PREFIX[@]}" ssh -o StrictHostKeyChecking=accept-new \
   "${DEPLOY_HOST}" "mkdir -p -- '${DEPLOY_ROOT}'"
-rsync -azL --protect-args \
+rsync -az --safe-links --protect-args \
   --exclude=.git/ \
   --exclude=.claude/ \
   --exclude=.codex/ \
@@ -78,7 +79,7 @@ rsync -azL --protect-args \
   --exclude=.local/ \
   --exclude=.backups/ \
   --exclude=.env \
-  --exclude=.env.local \
+  --exclude='.env.*' \
   --exclude=.venv/ \
   --exclude=.uv-cache/ \
   --exclude=.matplotlib/ \

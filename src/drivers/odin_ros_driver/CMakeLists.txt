@@ -432,8 +432,8 @@ elseif(ROS_VERSION STREQUAL "ROS2")
         RUNTIME DESTINATION lib/${PROJECT_NAME}
     )
     
-    # Install package.xml
-    install(FILES package.xml
+    # Install manifest, license, and snapshot provenance together.
+    install(FILES package.xml LICENSE UPSTREAM_VERSION
         DESTINATION share/${PROJECT_NAME}
     )
     
@@ -505,4 +505,3 @@ message(STATUS "Target platform: ${TARGET_PLATFORM}")
 message(STATUS "lydHostApi library: ${LYD_HOST_API_LIB}")
 message(STATUS "libusb library: ${LIBUSB_LIBRARIES}")
 message(STATUS "=======================================")
-

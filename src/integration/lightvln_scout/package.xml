@@ -3,14 +3,16 @@
   <name>lightvln_scout</name>
   <version>0.1.0</version>
   <description>LightNav integration and safety adapter for Scout Mini with Odin1.</description>
-  <maintainer email="maintainers@example.com">LightVLN Scout maintainers</maintainer>
-  <license>GPL-3.0-or-later</license>
-  <buildtool_depend>ament_python</buildtool_depend>
+  <maintainer email="kevinladlee@gmail.com">KevinLADLee</maintainer>
+  <url type="repository">https://github.com/KevinLADLee/lightvln-scout-odin</url>
+  <license>Apache-2.0</license>
+  <buildtool_depend>python3-setuptools</buildtool_depend>
   <depend>diagnostic_msgs</depend>
   <depend>geometry_msgs</depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>odin_ros_driver</exec_depend>
+  <exec_depend>scout_base</exec_depend>
   <depend>rcl_interfaces</depend>
   <depend>rclpy</depend>
   <exec_depend>sensor_msgs</exec_depend>
@@ -18,6 +20,7 @@
   <exec_depend>python3-aiohttp</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <depend>scout_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>

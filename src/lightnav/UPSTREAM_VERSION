@@ -1,0 +1,14 @@
+repository: https://github.com/lightorigins/LightNav-0.git
+base_commit: a645828d81a8439651172197ca80a75dc1377977
+source_path: robot_deploy/src
+packages: vln_client, vln_mpc, vln_web
+snapshot_kind: modified
+note: Base identified from the local source checkout and file comparison. The initial import a9fb030 already contained local changes; this is not a pristine upstream export.
+local_changes:
+  - URL validation, image byte-layout handling, client lifecycle and request sequencing.
+  - Odometry geometry, Web/ROS control ownership, Scout telemetry and emergency-stop compatibility.
+  - Web numeric validation rejects overflow and boolean velocities without dropping the connection.
+  - ROS manifests use python3-setuptools as the build dependency and retain ament_python as the build type.
+  - Python packages install LICENSE and NOTICE alongside package.xml.
+  - Regression tests cover these adaptations.
+update_policy: Keep the model, inference protocol, MPC algorithm and original Web assets close to upstream. Put Scout/Odin-specific behavior in the integration package; replace local patches with equivalent upstream fixes when available.
